@@ -1,3 +1,7 @@
 aiogram == 2.14.3
 pydantic == 1.8.2
 pydantic[dotenv] == 0.19.0
+emoji == 1.4.2
+aioredis == 2.0.0
+asyncpg == 0.24.0
+loguru == 0.5.3
