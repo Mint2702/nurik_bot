@@ -3,13 +3,13 @@ from pydantic import BaseSettings, Field
 
 class Settings(BaseSettings):
     token: str = Field(..., env="TOKEN")
-    # password: str = Field(..., env="PASSWORD")
+    redis_url: str = Field(..., env="REDIS_URL")
 
-    # psql_db_name: str = Field(..., env="PSQL_DB_NAME")
-    # psql_user: str = Field(..., env="PSQL_DB_USER")
-    # psql_password: str = Field(..., env="PSQL_DB_PASSWORD")
-    # psql_host: str = Field(..., env="PSQL_DB_HOST")
-    # psql_port: str = Field(..., env="PSQL_DB_PORT")
+    psql_db_name: str = Field(..., env="PSQL_DB_NAME")
+    psql_user: str = Field(..., env="PSQL_DB_USER")
+    psql_password: str = Field(..., env="PSQL_DB_PASSWORD")
+    psql_host: str = Field(..., env="PSQL_DB_HOST")
+    psql_port: str = Field(..., env="PSQL_DB_PORT")
 
     class Config:
         env_file = ".env"
