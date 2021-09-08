@@ -2,20 +2,46 @@ from .utils import sql_task
 
 
 @sql_task
-async def get_driver_data(connection, driver_number: str, terminal_number: str):
+async def post_user(connection, user_data: dict):
     row = await connection.fetchrow(
-        """SELECT p.second_name, p.first_name, p.father_name
-        , date_part('year', age(p.date_of_birth))::int AS age
-        , o.name AS organization_name
-        , p.photo
-        FROM personnel AS p
-        JOIN organizations AS o ON p.organization = o.id
-        WHERE p.pers_number = $1
-        AND o.id = (SELECT organization_id FROM current_term_org
-        WHERE serial_number=$2)
-        LIMIT 1;""",
-        driver_number,
-        terminal_number,
+        "INSERT INTO users VALUES ($1, $2, $3, $4);",
+        user_data["id"],
+        user_data["username"],
+        user_data["first_name"],
+        user_data["last_name"],
+    )
+
+    return row
+
+
+@sql_task
+async def update_user(connection, user_data: dict, user_id: int):
+    def build_sql_request(user_data: dict, user_id: int) -> str:
+        request = "UPDATE users SET "
+        for key, value in user_data.items():
+            if type(value) is str:
+                request += f"{str(key)} = '{str(value)}', "
+            elif value is None:
+                request += f"{str(key)} = null, "
+            else:
+                request += f"{str(key)} = {str(value)}, "
+
+        request = request[:-2]
+        request += f" WHERE id = {str(user_id)};"
+        print(request)
+
+        return request
+
+    request = build_sql_request(user_data, user_id)
+    row = await connection.fetchrow(request)
+
+    return row
+
+
+@sql_task
+async def get_user_data(connection, user_id: int):
+    row = await connection.fetchrow(
+        "SELECT id, username, first_name, last_name FROM users WHERE id = $1;", user_id
     )
 
     return row
