@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from .utils import sql_task
 
 
@@ -51,6 +53,29 @@ async def check_user_orders_exists(connection, user_id: int):
     row = await connection.fetchrow(
         "SELECT EXISTS(SELECT 1 FROM orders WHERE user_id = $1 AND start_point > NOW());",
         user_id,
+    )
+
+    return row
+
+
+@sql_task
+async def get_day_work_period(connection, day: datetime):
+    row = await connection.fetchrow(
+        "SELECT start_point, end_point FROM workperiods WHERE work_date = $1 AND start_point > NOW();",
+        day,
+    )
+
+    return row
+
+
+@sql_task
+async def get_orders_during_day(
+    connection, start_point: datetime.timestamp, end_point: datetime.timestamp
+):
+    row = await connection.fetch(
+        "SELECT start_point, work_interval FROM orders WHERE start_point > $1 AND start_point < $2;",
+        start_point,
+        end_point,
     )
 
     return row

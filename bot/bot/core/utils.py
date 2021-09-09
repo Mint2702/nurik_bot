@@ -6,17 +6,17 @@ from aiogram.types import (
     InlineKeyboardButton,
 )
 from loguru import logger
+from datetime import datetime, timedelta
 
-from .dbs.requests import post_user, update_user, get_user_data
+from .dbs.requests import (
+    post_user,
+    update_user,
+    get_user_data,
+    get_day_work_period,
+    get_orders_during_day,
+)
 from core.dbs.requests import check_user_orders_exists
-
-
-BUTTON_START_NAMES = {
-    "sing up": "Записаться",
-    "about": "Обо мне",
-    "decline": "Отменить запись",
-}
-BUTTON_CHOICE_NAMES = {"home": "Главное меню"}
+from .markups import generate_main_markup
 
 
 async def build_start_markup(user_id: int) -> ReplyKeyboardMarkup:
@@ -31,40 +31,13 @@ async def build_start_markup(user_id: int) -> ReplyKeyboardMarkup:
     return markup
 
 
-def generate_main_markup(full: bool = True) -> ReplyKeyboardMarkup:
-    """ Generates ReplyKeyboardMarkup with one or two buttons depends on the 'full' arguement """
-
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    button_add = KeyboardButton(BUTTON_START_NAMES["sing up"])
-    button_about = KeyboardButton(BUTTON_START_NAMES["about"])
-
-    if full:
-        button_remove = KeyboardButton(BUTTON_START_NAMES["decline"])
-        markup.add(button_add).add(button_remove).add(button_about)
-    else:
-        markup.add(button_add).add(button_about)
-
-    return markup
-
-
-def generate_choice_markup() -> ReplyKeyboardMarkup:
-    """ Generates ReplyKeyboardMarkup with 'back' and 'home' buttons """
-
-    markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    button_home = KeyboardButton(BUTTON_CHOICE_NAMES["home"])
-
-    markup.add(button_home)
-
-    return markup
-
-
 async def post_update_user(message):
     """
     Adds user to db if the user is new. Checks if current user info is the same as the data in the db.
     Updates user data if needed.
     """
 
-    user_current_data = dict(await get_user_data(message.from_user.id))
+    user_current_data = await get_user_data(message.from_user.id)
     user_old_data = {
         "id": message.from_user.id,
         "username": message.from_user.username,
@@ -74,6 +47,7 @@ async def post_update_user(message):
     if user_current_data is None:
         await post_user(user_old_data)
     else:
+        user_current_data = dict(user_current_data)
         if user_current_data != user_old_data:
             update_values = {
                 key: value
@@ -81,3 +55,48 @@ async def post_update_user(message):
                 if user_current_data[key] != value
             }
             await update_user(update_values, message.from_user.id)
+
+
+def get_15mins_periods(start_point: datetime, end_point: datetime) -> list:
+    """ Creates a list of 15-mins ranges from start to end points of a working day """
+
+    work_periods = []
+    while start_point <= end_point:
+        work_periods.append(start_point.strftime("%H:%M"))
+        start_point += timedelta(minutes=15)
+
+    return work_periods
+
+
+def get_unavailable_periods(orders: list) -> list:
+    unavailable_times = []
+    for order in orders:
+        periods = get_15mins_periods(
+            order["start_point"], order["start_point"] + order["work_interval"]
+        )
+        for i in range(len(periods) - 1):
+            unavailable_times.append(periods[i])
+
+    return unavailable_times
+
+
+async def get_available_times(date: datetime) -> list:
+    """ Creates a list of available start times for a session """
+
+    work_period = await get_day_work_period(date)
+    if work_period is not None:
+        start_point, end_point = (
+            dict(work_period)["start_point"],
+            dict(work_period)["end_point"],
+        )
+
+        all_work_periods = get_15mins_periods(start_point, end_point)
+
+        orders = await get_orders_during_day(start_point, end_point)
+        orders = [dict(order) for order in orders]
+
+        unavailable_times = get_unavailable_periods(orders)
+
+        return sorted(list(set(all_work_periods) - set(unavailable_times)))
+    else:
+        return None

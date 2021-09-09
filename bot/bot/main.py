@@ -20,16 +20,16 @@ from aiogram_calendar import (
     dialog_cal_callback,
     DialogCalendar,
 )
+from loguru import logger
 
 from core.settings import settings
-from core.utils import (
-    build_start_markup,
-    generate_choice_markup,
-    post_update_user,
-    BUTTON_START_NAMES,
-    BUTTON_CHOICE_NAMES,
-)
+from core.utils import build_start_markup, post_update_user, get_available_times
 from core.states import States
+from core.markups import (
+    generate_choice_markup,
+    generate_free_times_markup,
+    BUTTON_START_NAMES,
+)
 
 
 bot = Bot(token=settings.token)
@@ -49,6 +49,26 @@ async def process_start_command(message: types.Message, state: FSMContext):
     await state.finish()
     await post_update_user(message)
 
+    await States.waiting_for_sign_up_or_decline.set()
+
+
+@dp.message_handler(Text(equals="Обо мне", ignore_case=True), state="*")
+async def home(message: types.Message, state: FSMContext):
+    markup = await build_start_markup(message.from_user.id)
+    await message.answer("Я Нурик", reply_markup=markup)
+
+    await state.finish()
+    await States.waiting_for_sign_up_or_decline.set()
+
+
+@dp.message_handler(Text(equals="главное меню", ignore_case=True), state="*")
+async def home(message: types.Message, state: FSMContext):
+    markup = await build_start_markup(message.from_user.id)
+    await message.answer("Оформление заказа отменено", reply_markup=markup)
+
+    await post_update_user(message)
+
+    await state.finish()
     await States.waiting_for_sign_up_or_decline.set()
 
 
@@ -79,30 +99,33 @@ async def process_simple_calendar(
     )
     if selected:
         await state.update_data(date=date.strftime("%Y-%m-%d"))
+
+        times = await get_available_times(date)
+        print(times)
+
+        # markup = generate_free_times_markup(["09:00", "10:00", "11:00"])
         await callback_query.message.answer(
             f"Выберите подходящее для вас время:", reply_markup=markup
         )
         await States.waiting_for_time.set()
 
 
-@dp.message_handler(Text(equals="Обо мне", ignore_case=True), state="*")
-async def home(message: types.Message, state: FSMContext):
-    markup = await build_start_markup(message.from_user.id)
-    await message.answer("Я Нурик", reply_markup=markup)
+@dp.message_handler(state=States.waiting_for_time)
+async def time_input(message: types.Message, state: FSMContext):
+    if message.text not in BUTTON_START_NAMES.values():
+        await message.answer(
+            "Пожалуйста, выберите действие, используя клавиатуру ниже."
+        )
+        return
+    elif message.text == BUTTON_START_NAMES["sing up"]:
 
-    await state.finish()
-    await States.waiting_for_sign_up_or_decline.set()
-
-
-@dp.message_handler(Text(equals="главное меню", ignore_case=True), state="*")
-async def home(message: types.Message, state: FSMContext):
-    markup = await build_start_markup(message.from_user.id)
-    await message.answer("Оформление заказа отменено", reply_markup=markup)
-
-    await post_update_user(message)
-
-    await state.finish()
-    await States.waiting_for_sign_up_or_decline.set()
+        await message.answer(
+            "Выберите дату:",
+        )
+        await States.waiting_for_date.set()
+    else:
+        markup = await build_start_markup(message.from_user.id)
+        await message.answer("Я Нурик", reply_markup=markup)
 
 
 if __name__ == "__main__":
