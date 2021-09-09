@@ -11,6 +11,14 @@ from .dbs.requests import post_user, update_user, get_user_data
 from core.dbs.requests import check_user_orders_exists
 
 
+BUTTON_START_NAMES = {
+    "sing up": "Записаться",
+    "about": "Обо мне",
+    "decline": "Отменить запись",
+}
+BUTTON_CHOICE_NAMES = {"home": "Главное меню"}
+
+
 async def build_start_markup(user_id: int) -> ReplyKeyboardMarkup:
     """ Builds markup depends if the user has active orders or nah """
 
@@ -27,13 +35,25 @@ def generate_main_markup(full: bool = True) -> ReplyKeyboardMarkup:
     """ Generates ReplyKeyboardMarkup with one or two buttons depends on the 'full' arguement """
 
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    button_add = KeyboardButton("Записаться")
+    button_add = KeyboardButton(BUTTON_START_NAMES["sing up"])
+    button_about = KeyboardButton(BUTTON_START_NAMES["about"])
 
     if full:
-        button_remove = KeyboardButton("Отменить запись")
-        markup.add(button_add).add(button_remove)
+        button_remove = KeyboardButton(BUTTON_START_NAMES["decline"])
+        markup.add(button_add).add(button_remove).add(button_about)
     else:
-        markup.add(button_add)
+        markup.add(button_add).add(button_about)
+
+    return markup
+
+
+def generate_choice_markup() -> ReplyKeyboardMarkup:
+    """ Generates ReplyKeyboardMarkup with 'back' and 'home' buttons """
+
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    button_home = KeyboardButton(BUTTON_CHOICE_NAMES["home"])
+
+    markup.add(button_home)
 
     return markup
 
