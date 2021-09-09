@@ -101,9 +101,7 @@ async def process_simple_calendar(
         await state.update_data(date=date.strftime("%Y-%m-%d"))
 
         times = await get_available_times(date)
-        print(times)
-
-        # markup = generate_free_times_markup(["09:00", "10:00", "11:00"])
+        markup = generate_free_times_markup(times)
         await callback_query.message.answer(
             f"Выберите подходящее для вас время:", reply_markup=markup
         )
