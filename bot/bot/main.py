@@ -6,9 +6,8 @@ from aiogram.dispatcher import FSMContext
 import asyncio
 
 from core.settings import settings
-from core.utils import generate_main_markup, post_update_user
+from core.utils import build_start_markup, post_update_user
 from core.states import States
-from core.dbs.requests import *
 
 
 bot = Bot(token=settings.token)
@@ -18,7 +17,8 @@ dp = Dispatcher(bot)
 @dp.message_handler(commands=["start"])
 async def process_start_command(message: types.Message):
     await post_update_user(message)
-    markup = generate_main_markup()
+
+    markup = await build_start_markup(message.from_user.id)
     await message.reply(
         "Привет!\nЯ Нурик, твой парикхмахер. Запишись ко мне, или посмотри мои работы)",
         reply_markup=markup,
@@ -29,8 +29,8 @@ async def process_start_command(message: types.Message):
 @dp.message_handler(commands=["help"])
 async def process_help_command(message: types.Message):
     await post_update_user(message)
-    markup = generate_main_markup(False)
-    await update_user({"username": "danilmint"}, 719720030)
+
+    markup = await build_start_markup(message.from_user.id)
     await message.reply(
         "Напиши мне что-нибудь, и я отпрпавлю этот текст тебе в ответ!",
         reply_markup=markup,

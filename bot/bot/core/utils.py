@@ -8,9 +8,24 @@ from aiogram.types import (
 from loguru import logger
 
 from .dbs.requests import post_user, update_user, get_user_data
+from core.dbs.requests import check_user_orders_exists
+
+
+async def build_start_markup(user_id: int) -> ReplyKeyboardMarkup:
+    """ Builds markup depends if the user has active orders or nah """
+
+    user_orders_exists = dict(await check_user_orders_exists(user_id))
+    if user_orders_exists["exists"]:
+        markup = generate_main_markup(full=True)
+    else:
+        markup = generate_main_markup(full=False)
+
+    return markup
 
 
 def generate_main_markup(full: bool = True) -> ReplyKeyboardMarkup:
+    """ Generates ReplyKeyboardMarkup with one or two buttons depends on the 'full' arguement """
+
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
     button_add = KeyboardButton("Записаться")
 
@@ -24,6 +39,11 @@ def generate_main_markup(full: bool = True) -> ReplyKeyboardMarkup:
 
 
 async def post_update_user(message):
+    """
+    Adds user to db if the user is new. Checks if current user info is the same as the data in the db.
+    Updates user data if needed.
+    """
+
     user_current_data = dict(await get_user_data(message.from_user.id))
     user_old_data = {
         "id": message.from_user.id,
