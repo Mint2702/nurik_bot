@@ -1,3 +1,5 @@
+SET TIMEZONE='Europe/Moscow';
+
 create table Users (id integer Primary Key,
 					username varchar(80) NOT NULL,
 					first_name varchar(80),
@@ -10,7 +12,7 @@ create table Orders (id varchar(32) Primary Key,
 					work_type varchar(80) NOT NULL,
 					work_interval interval NOT NULL,
 					user_id integer REFERENCES Users (id) NOT NULL,
-					created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+					created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP(0));
 					
 create table WorkPeriods (id varchar(32) Primary Key,
 						 work_date date NOT NULL,
