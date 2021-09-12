@@ -5,7 +5,7 @@ from .utils import sql_task
 
 @sql_task
 async def post_user(connection, user_data: dict):
-    row = await connection.fetchrow(
+    await connection.fetchrow(
         "INSERT INTO users VALUES ($1, $2, $3, $4);",
         user_data["id"],
         user_data["username"],
@@ -13,7 +13,17 @@ async def post_user(connection, user_data: dict):
         user_data["last_name"],
     )
 
-    return row
+
+@sql_task
+async def post_order(connection, order_data: dict):
+    await connection.fetchrow(
+        "INSERT INTO orders VALUES ($1, $2, $3, $4, $5);",
+        order_data["id"],
+        order_data["start_point"],
+        order_data["work_type"],
+        order_data["work_interval"],
+        order_data["user_id"],
+    )
 
 
 @sql_task

@@ -7,6 +7,11 @@ BUTTON_START_NAMES = {
     "decline": "Отменить запись",
 }
 BUTTON_CHOICE_NAMES = {"home": "Главное меню"}
+WORK_TYPES = {
+    "Мужская стрижка": 15,
+    "Мужская стрижка с покраской": 30,
+    "Женская окраска": 120,
+}
 
 
 def generate_main_markup(full: bool = True) -> ReplyKeyboardMarkup:
@@ -44,5 +49,23 @@ def generate_free_times_markup(times: list):
     for time in times:
         button = KeyboardButton(time)
         markup.add(button)
+
+    button_home = KeyboardButton(BUTTON_CHOICE_NAMES["home"])
+    markup.add(button_home)
+
+    return markup
+
+
+def generate_work_types_markup():
+    """ Generates ReplyKeyboardMarkup with work types """
+
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+
+    for type in WORK_TYPES.keys():
+        button = KeyboardButton(type)
+        markup.add(button)
+
+    button_home = KeyboardButton(BUTTON_CHOICE_NAMES["home"])
+    markup.add(button_home)
 
     return markup
