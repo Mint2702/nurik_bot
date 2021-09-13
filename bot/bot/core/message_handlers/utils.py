@@ -1,14 +1,9 @@
-from aiogram.types import (
-    ReplyKeyboardRemove,
-    ReplyKeyboardMarkup,
-    KeyboardButton,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-)
+from aiogram.types import ReplyKeyboardMarkup
 from loguru import logger
 from datetime import datetime, timedelta
+from pytz import timezone
 
-from .dbs.requests import (
+from ..dbs.requests import (
     post_user,
     update_user,
     get_user_data,
@@ -17,6 +12,9 @@ from .dbs.requests import (
 )
 from core.dbs.requests import check_user_orders_exists
 from .markups import generate_main_markup
+
+
+tz = timezone("Europe/Moscow")
 
 
 async def build_start_markup(user_id: int) -> ReplyKeyboardMarkup:
@@ -69,10 +67,13 @@ def get_15mins_periods(start_point: datetime, end_point: datetime) -> list:
 
 
 def get_unavailable_periods(orders: list) -> list:
+    """ Creates a list of intervals that are already taken by another user """
+
     unavailable_times = []
     for order in orders:
         periods = get_15mins_periods(
-            order["start_point"], order["start_point"] + order["work_interval"]
+            order["start_point"].astimezone(tz),
+            order["start_point"].astimezone(tz) + order["work_interval"],
         )
         for i in range(len(periods) - 1):
             unavailable_times.append(periods[i])
@@ -86,8 +87,8 @@ async def get_available_times(date: datetime) -> list:
     work_period = await get_day_work_period(date)
     if work_period is not None:
         start_point, end_point = (
-            dict(work_period)["start_point"],
-            dict(work_period)["end_point"],
+            dict(work_period)["start_point"].astimezone(tz),
+            dict(work_period)["end_point"].astimezone(tz),
         )
 
         all_work_periods = get_15mins_periods(start_point, end_point)

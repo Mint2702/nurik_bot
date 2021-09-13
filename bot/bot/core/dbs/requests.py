@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from .utils import sql_task
+from .utils import sql_task, build_sql_update_request
 
 
 @sql_task
@@ -28,22 +28,7 @@ async def post_order(connection, order_data: dict):
 
 @sql_task
 async def update_user(connection, user_data: dict, user_id: int):
-    def build_sql_request(user_data: dict, user_id: int) -> str:
-        request = "UPDATE users SET "
-        for key, value in user_data.items():
-            if type(value) is str:
-                request += f"{str(key)} = '{str(value)}', "
-            elif value is None:
-                request += f"{str(key)} = null, "
-            else:
-                request += f"{str(key)} = {str(value)}, "
-
-        request = request[:-2]
-        request += f" WHERE id = {str(user_id)};"
-
-        return request
-
-    request = build_sql_request(user_data, user_id)
+    request = build_sql_update_request(user_data, user_id)
     row = await connection.fetchrow(request)
 
     return row

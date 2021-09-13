@@ -6,26 +6,19 @@ from aiogram.dispatcher.filters import Text
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from datetime import datetime, timedelta
-from aiogram.types import (
-    Message,
-    CallbackQuery,
-    ReplyKeyboardRemove,
-    ReplyKeyboardMarkup,
-)
-
+from aiogram.types import CallbackQuery, ReplyKeyboardRemove
 import asyncio
-from aiogram_calendar import (
-    simple_cal_callback,
-    SimpleCalendar,
-    dialog_cal_callback,
-    DialogCalendar,
-)
+from aiogram_calendar import simple_cal_callback, SimpleCalendar
 from loguru import logger
 
 from core.settings import settings
-from core.utils import build_start_markup, post_update_user, get_available_times
-from core.states import States
-from core.markups import (
+from core.message_handlers.utils import (
+    build_start_markup,
+    post_update_user,
+    get_available_times,
+)
+from core.message_handlers.states import States
+from core.message_handlers.markups import (
     generate_choice_markup,
     generate_free_times_markup,
     BUTTON_START_NAMES,
@@ -35,10 +28,21 @@ from core.markups import (
 from core.dbs.requests import post_order
 
 
-bot = Bot(token=settings.token)
-# storage = RedisStorage2(settings.redis_host, settings.redis_port, password=settings.redis_password)
-storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
+def create_dispatcher() -> Dispatcher:
+    bot = Bot(token=settings.token)
+
+    if settings.dev:
+        storage = MemoryStorage()
+    else:
+        storage = RedisStorage2(
+            settings.redis_host, settings.redis_port, password=settings.redis_password
+        )
+
+    dp = Dispatcher(bot, storage=storage)
+    return dp
+
+
+dp = create_dispatcher()
 
 
 @dp.message_handler(commands=["start"], state="*")
@@ -116,7 +120,7 @@ async def process_simple_calendar(
     selected, date = await SimpleCalendar().process_selection(
         callback_query, callback_data
     )
-    if selected:
+    if selected and date >= datetime.now():
         await state.update_data(date=date)
 
         times = await get_available_times(date)
@@ -125,6 +129,12 @@ async def process_simple_calendar(
             f"Выберите подходящее для вас время:", reply_markup=markup
         )
         await States.waiting_for_time.set()
+    else:
+        await callback_query.message.answer(
+            "Выбирать дату из прошлого нельзя:",
+            reply_markup=await SimpleCalendar().start_calendar(),
+        )
+        await States.waiting_for_date.set()
 
 
 @dp.message_handler(state=States.waiting_for_time)

@@ -43,3 +43,19 @@ def sql_task(func):
         return result
 
     return wrapper
+
+
+def build_sql_update_request(user_data: dict, user_id: int) -> str:
+    request = "UPDATE users SET "
+    for key, value in user_data.items():
+        if type(value) is str:
+            request += f"{str(key)} = '{str(value)}', "
+        elif value is None:
+            request += f"{str(key)} = null, "
+        else:
+            request += f"{str(key)} = {str(value)}, "
+
+    request = request[:-2]
+    request += f" WHERE id = {str(user_id)};"
+
+    return request

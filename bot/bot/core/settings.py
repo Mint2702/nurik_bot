@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     psql_host: str = Field(..., env="PSQL_DB_HOST")
     psql_port: str = Field(..., env="PSQL_DB_PORT")
 
+    dev: bool = Field(..., env="DEV")
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
