@@ -74,3 +74,24 @@ async def get_orders_during_day(
     )
 
     return row
+
+
+@sql_task
+async def get_user_orders(connection, user_id: int):
+    row = await connection.fetch(
+        "SELECT start_point, work_type, id FROM orders WHERE user_id = $1 AND start_point >= NOW();",
+        user_id,
+    )
+
+    return row
+
+
+@sql_task
+async def delete_order(connection, user_id: int, start_point: datetime):
+    row = await connection.fetch(
+        "DELETE FROM orders WHERE user_id = $1 AND start_point >= NOW() AND start_point = $2;",
+        user_id,
+        start_point,
+    )
+
+    return row

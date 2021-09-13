@@ -5,13 +5,10 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 
 from ..utils import build_start_markup, post_update_user
 from ..markups import BUTTON_START_NAMES, generate_work_types_markup
-from .my_orders import show_orders
-from .remove_appointment import orders_markup
 
 
 class States(StatesGroup):
     waiting_for_sign_up_or_decline = State()
-    waiting_for_appointment_choise = State()
 
     waiting_for_type = State()
 
@@ -46,15 +43,6 @@ async def action_chosen(message: types.Message, state: FSMContext):
         markup = generate_work_types_markup()
         await message.answer("Выберите тип нужной Вам стрижки:", reply_markup=markup)
         await States.waiting_for_type.set()
-    elif message.text == BUTTON_START_NAMES["orders"]:
-        message_text = await show_orders(message.from_user.id)
-        markup = await build_start_markup(message.from_user.id)
-        await message.answer(message_text, reply_markup=markup)
-    elif message.text == BUTTON_START_NAMES["decline"]:
-        markup = await orders_markup(message.from_user.id)
-        message_text = "Выберите нужную запись для отмены:"
-        await message.answer(message_text, reply_markup=markup)
-        await States.waiting_for_appointment_choise.set()
     else:
         markup = await build_start_markup(message.from_user.id)
         await message.answer("Я Нурик", reply_markup=markup)
@@ -83,9 +71,6 @@ def register_handlers_common(dp: Dispatcher):
     )
     dp.register_message_handler(
         action_chosen, Text(equals="Обо мне", ignore_case=True), state="*"
-    )
-    dp.register_message_handler(
-        action_chosen, Text(equals="Мои записи", ignore_case=True), state="*"
     )
     dp.register_message_handler(
         action_chosen, state=States.waiting_for_sign_up_or_decline

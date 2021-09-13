@@ -78,6 +78,7 @@ async def time_input(message: types.Message, state: FSMContext):
             start_point=start_point, user_id=message.from_user.id, id=order_id
         )
         data = await state.get_data()
+        await state.reset_data()
         await post_order(data)
 
         markup = await build_start_markup(message.from_user.id)

@@ -12,6 +12,9 @@ from core.message_handlers.branch_handlers.common import register_handlers_commo
 from core.message_handlers.branch_handlers.create_appointment import (
     register_handlers_create_appointment,
 )
+from core.message_handlers.branch_handlers.remove_appointment import (
+    register_handlers_remove_appointment,
+)
 from core.settings import settings
 
 
@@ -42,6 +45,7 @@ async def main():
 
     register_handlers_common(dp)
     register_handlers_create_appointment(dp)
+    register_handlers_remove_appointment(dp)
 
     await set_commands(bot)
 

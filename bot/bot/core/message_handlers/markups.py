@@ -5,6 +5,7 @@ BUTTON_START_NAMES = {
     "sing up": "Записаться",
     "about": "Обо мне",
     "decline": "Отменить запись",
+    "orders": "Мои записи",
 }
 BUTTON_CHOICE_NAMES = {"home": "Главное меню"}
 WORK_TYPES = {
@@ -23,7 +24,8 @@ def generate_main_markup(full: bool = True) -> ReplyKeyboardMarkup:
 
     if full:
         button_remove = KeyboardButton(BUTTON_START_NAMES["decline"])
-        markup.add(button_add).add(button_remove).add(button_about)
+        button_orders = KeyboardButton(BUTTON_START_NAMES["orders"])
+        markup.add(button_add, button_remove).add(button_about, button_orders)
     else:
         markup.add(button_add).add(button_about)
 
@@ -41,7 +43,7 @@ def generate_choice_markup() -> ReplyKeyboardMarkup:
     return markup
 
 
-def generate_free_times_markup(times: list):
+def generate_free_times_markup(times: list) -> ReplyKeyboardMarkup:
     """ Generates ReplyKeyboardMarkup with available times for a client """
 
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -56,13 +58,26 @@ def generate_free_times_markup(times: list):
     return markup
 
 
-def generate_work_types_markup():
+def generate_work_types_markup() -> ReplyKeyboardMarkup:
     """ Generates ReplyKeyboardMarkup with work types """
 
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
 
     for type in WORK_TYPES.keys():
         button = KeyboardButton(type)
+        markup.add(button)
+
+    button_home = KeyboardButton(BUTTON_CHOICE_NAMES["home"])
+    markup.add(button_home)
+
+    return markup
+
+
+def generate_orders_markup(orders: list) -> ReplyKeyboardMarkup:
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+
+    for order in orders:
+        button = KeyboardButton(order)
         markup.add(button)
 
     button_home = KeyboardButton(BUTTON_CHOICE_NAMES["home"])
