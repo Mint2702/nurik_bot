@@ -1,33 +1,27 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text, IDFilter
-from aiogram.dispatcher.filters.state import State, StatesGroup
 
-from ..utils import build_start_markup, post_update_user
+from ...logic.orders import get_orders
+from ...logic.decorators import basic_message_handler_wrapper
 from ..markups import generate_orders_markup
-from ...dbs.requests import get_user_orders, delete_order
-
-
-class States(StatesGroup):
-    waiting_for_appointment_choise = State()
-    waiting_for_sign_up_or_decline = State()
+from ...dbs.requests import delete_order
+from ..states import States
 
 
 async def orders_markup(user_id: int):
-    orders = list(await get_user_orders(user_id))
-    orders_list_dict = [dict(order) for order in orders]
+    orders = await get_orders(user_id)
     orders_list_str = [
         f"{order['work_type']} - {order['start_point'].strftime('%d %B  -  %H:%M')}"
-        for order in orders_list_dict
+        for order in orders
     ]
     markup = generate_orders_markup(orders_list_str)
 
     return markup
 
 
+@basic_message_handler_wrapper
 async def remove_order(message: types.Message, state: FSMContext):
     await state.finish()
-    await post_update_user(message)
 
     start_point = message.text
     print(start_point)

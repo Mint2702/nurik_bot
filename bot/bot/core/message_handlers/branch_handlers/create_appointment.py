@@ -8,7 +8,8 @@ from aiogram_calendar import simple_cal_callback, SimpleCalendar
 import uuid
 from datetime import datetime, timedelta
 
-from ..utils import build_start_markup, get_available_times
+from ...logic.utils import build_start_markup, get_available_times
+from ...logic.decorators import basic_message_handler_wrapper
 from ..markups import (
     WORK_TYPES,
     CONFIRM_BUTTONS,
@@ -17,18 +18,10 @@ from ..markups import (
     generate_confirm_markup,
 )
 from ...dbs.requests import post_order
+from ..states import States
 
 
-class States(StatesGroup):
-    waiting_for_sign_up_or_decline = State()
-
-    waiting_for_date = State()
-    waiting_for_time = State()
-    waiting_for_type = State()
-
-    waiting_for_confirm = State()
-
-
+@basic_message_handler_wrapper
 async def type_input(message: types.Message, state: FSMContext):
     if message.text not in WORK_TYPES.keys():
         await message.answer("Пожалуйста, выберите предложенный нужную Вам стрижку:")
@@ -77,6 +70,7 @@ async def process_simple_calendar(
         await States.waiting_for_date.set()
 
 
+@basic_message_handler_wrapper
 async def time_input(message: types.Message, state: FSMContext):
     data = await state.get_data()
     times = await get_available_times(data["date"])
@@ -100,6 +94,7 @@ async def time_input(message: types.Message, state: FSMContext):
         await States.waiting_for_confirm.set()
 
 
+@basic_message_handler_wrapper
 async def confirm(message: types.Message, state: FSMContext):
     if message.text not in CONFIRM_BUTTONS.values():
         await message.answer("Пожалуйста, подтвердите или отмените вашу запись.")

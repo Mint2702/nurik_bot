@@ -1,59 +1,50 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text, IDFilter
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.dispatcher.filters import Text
 
-from ..utils import build_start_markup, post_update_user
+from ...logic.utils import build_start_markup
+from ...logic.decorators import basic_message_handler_wrapper
 from ..markups import BUTTON_START_NAMES, generate_work_types_markup
-from .my_orders import show_orders
+from ...logic.orders import show_my_orders
 from .remove_appointment import orders_markup
+from ..states import States
 
 
-class States(StatesGroup):
-    waiting_for_sign_up_or_decline = State()
-    waiting_for_appointment_choise = State()
-
-    waiting_for_type = State()
-
-
+@basic_message_handler_wrapper
 async def process_start_command(message: types.Message, state: FSMContext):
     await message.reply(
-        "Привет!\nЯ Нурик, твой парикхмахер. Запишись ко мне на стрижку или покраску, или посмотри мои работы)",
+        "Привет!\nЯ Нурик, твой парикхмахер. Запишись ко мне на стрижку или покраску, или посмотри на мои работы)",
     )
 
     await state.finish()
-    await post_update_user(message)
-
     await chose_action(message)
 
 
+@basic_message_handler_wrapper
 async def home(message: types.Message, state: FSMContext):
     await message.answer("Оформление заказа отменено")
-
-    await post_update_user(message)
 
     await state.finish()
     await chose_action(message)
 
 
+@basic_message_handler_wrapper
 async def action_chosen(message: types.Message, state: FSMContext):
     if message.text not in BUTTON_START_NAMES.values():
         await message.answer(
             "Пожалуйста, выберите действие, используя клавиатуру ниже."
         )
-        return
     elif message.text == BUTTON_START_NAMES["sing up"]:
         markup = generate_work_types_markup()
         await message.answer("Выберите тип нужной Вам стрижки:", reply_markup=markup)
         await States.waiting_for_type.set()
     elif message.text == BUTTON_START_NAMES["orders"]:
-        message_text = await show_orders(message.from_user.id)
+        message_text = await show_my_orders(message.from_user.id)
         markup = await build_start_markup(message.from_user.id)
         await message.answer(message_text, reply_markup=markup)
     elif message.text == BUTTON_START_NAMES["decline"]:
         markup = await orders_markup(message.from_user.id)
-        message_text = "Выберите нужную запись для отмены:"
-        await message.answer(message_text, reply_markup=markup)
+        await message.answer("Выберите нужную запись для отмены:", reply_markup=markup)
         await States.waiting_for_appointment_choise.set()
     else:
         markup = await build_start_markup(message.from_user.id)
@@ -63,8 +54,6 @@ async def action_chosen(message: types.Message, state: FSMContext):
 async def chose_action(message: types.Message):
     markup = await build_start_markup(message.from_user.id)
     await message.answer("Выберите действие:", reply_markup=markup)
-
-    await post_update_user(message)
 
     await States.waiting_for_sign_up_or_decline.set()
 

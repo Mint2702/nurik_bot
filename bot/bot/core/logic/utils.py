@@ -4,14 +4,11 @@ from datetime import datetime, timedelta
 from pytz import timezone
 
 from ..dbs.requests import (
-    post_user,
-    update_user,
-    get_user_data,
     get_day_work_period,
     get_orders_during_day,
+    check_user_orders_exists,
 )
-from core.dbs.requests import check_user_orders_exists
-from .markups import generate_main_markup
+from ..message_handlers.markups import generate_main_markup
 
 
 tz = timezone("Europe/Moscow")
@@ -27,32 +24,6 @@ async def build_start_markup(user_id: int) -> ReplyKeyboardMarkup:
         markup = generate_main_markup(full=False)
 
     return markup
-
-
-async def post_update_user(message):
-    """
-    Adds user to db if the user is new. Checks if current user info is the same as the data in the db.
-    Updates user data if needed.
-    """
-
-    user_current_data = await get_user_data(message.from_user.id)
-    user_old_data = {
-        "id": message.from_user.id,
-        "username": message.from_user.username,
-        "first_name": message.from_user.first_name,
-        "last_name": message.from_user.last_name,
-    }
-    if user_current_data is None:
-        await post_user(user_old_data)
-    else:
-        user_current_data = dict(user_current_data)
-        if user_current_data != user_old_data:
-            update_values = {
-                key: value
-                for key, value in user_old_data.items()
-                if user_current_data[key] != value
-            }
-            await update_user(update_values, message.from_user.id)
 
 
 def get_15mins_periods(start_point: datetime, end_point: datetime) -> list:
