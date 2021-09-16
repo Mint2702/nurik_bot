@@ -1,24 +1,23 @@
 from aiogram import Bot
 from aiogram.utils import executor
 from aiogram.dispatcher import Dispatcher
+import asyncio
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-import asyncio
 from aiogram.types import BotCommand
 
 from core.message_handlers.branch_handlers.common import register_handlers_common
-from core.message_handlers.branch_handlers.create_appointment import (
-    register_handlers_create_appointment,
-)
-from core.message_handlers.branch_handlers.remove_appointment import (
-    register_handlers_remove_appointment,
-)
+
+# from core.message_handlers.branch_handlers.create_appointment import (
+#     register_handlers_create_appointment,
+# )
+# from core.message_handlers.branch_handlers.remove_appointment import (
+#     register_handlers_remove_appointment,
+# )
 from core.settings import settings
 
 
 def create_dispatcher() -> tuple:
-    bot = Bot(token=settings.token)
-
     if settings.dev:
         storage = MemoryStorage()
     else:
@@ -26,6 +25,7 @@ def create_dispatcher() -> tuple:
             settings.redis_host, settings.redis_port, password=settings.redis_password
         )
 
+    bot = Bot(token=settings.token)
     dp = Dispatcher(bot, storage=storage)
 
     return dp, bot
@@ -42,8 +42,8 @@ async def main():
     dp, bot = create_dispatcher()
 
     register_handlers_common(dp)
-    register_handlers_create_appointment(dp)
-    register_handlers_remove_appointment(dp)
+    # register_handlers_create_appointment(dp)
+    # register_handlers_remove_appointment(dp)
 
     await set_commands(bot)
 

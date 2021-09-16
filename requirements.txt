@@ -5,3 +5,4 @@ emoji == 1.4.2
 asyncpg == 0.24.0
 loguru == 0.5.3
 aiogram-calendar == 0.1.1
+fastapi == 0.68.1
