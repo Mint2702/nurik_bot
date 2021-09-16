@@ -9,7 +9,13 @@ import uuid
 from datetime import datetime, timedelta
 
 from ..utils import build_start_markup, get_available_times
-from ..markups import WORK_TYPES, generate_choice_markup, generate_free_times_markup
+from ..markups import (
+    WORK_TYPES,
+    CONFIRM_BUTTONS,
+    generate_choice_markup,
+    generate_free_times_markup,
+    generate_confirm_markup,
+)
 from ...dbs.requests import post_order
 
 
@@ -20,7 +26,7 @@ class States(StatesGroup):
     waiting_for_time = State()
     waiting_for_type = State()
 
-    waiting_for_record = State()
+    waiting_for_confirm = State()
 
 
 async def type_input(message: types.Message, state: FSMContext):
@@ -50,11 +56,19 @@ async def process_simple_calendar(
         await state.update_data(date=date)
 
         times = await get_available_times(date)
-        markup = generate_free_times_markup(times)
-        await callback_query.message.answer(
-            f"Выберите подходящее для вас время:", reply_markup=markup
-        )
-        await States.waiting_for_time.set()
+        if times is None:
+            markup = await build_start_markup(callback_query.message.from_user.id)
+            await callback_query.message.answer(
+                "К сожалению, Нурик не работает в этот день", reply_markup=markup
+            )
+            await States.waiting_for_sign_up_or_decline.set()
+            return
+        else:
+            markup = generate_free_times_markup(times)
+            await callback_query.message.answer(
+                f"Выберите подходящее для вас время:", reply_markup=markup
+            )
+            await States.waiting_for_time.set()
     else:
         await callback_query.message.answer(
             "Выбирать дату из прошлого нельзя:",
@@ -77,13 +91,36 @@ async def time_input(message: types.Message, state: FSMContext):
         await state.update_data(
             start_point=start_point, user_id=message.from_user.id, id=order_id
         )
+
+        markup = generate_confirm_markup()
+        await message.answer(
+            f"Проверьте и подтвердите данные по Вашей записи:\nВы записаны на {start_point}, {data['work_type']}",
+        )
+        await message.answer("Подтвердить?", reply_markup=markup)
+        await States.waiting_for_confirm.set()
+
+
+async def confirm(message: types.Message, state: FSMContext):
+    if message.text not in CONFIRM_BUTTONS.values():
+        await message.answer("Пожалуйста, подтвердите или отмените вашу запись.")
+        return
+    elif message.text == CONFIRM_BUTTONS["yes"]:
         data = await state.get_data()
         await state.reset_data()
         await post_order(data)
 
         markup = await build_start_markup(message.from_user.id)
         await message.answer(
-            f"Спасибо за запись, Вы записаны на {data['start_point']}, {data['work_type']}",
+            "Спасибо за запись!",
+            reply_markup=markup,
+        )
+        await States.waiting_for_sign_up_or_decline.set()
+    else:
+        await state.reset_data()
+
+        markup = await build_start_markup(message.from_user.id)
+        await message.answer(
+            "Запись отменена.",
             reply_markup=markup,
         )
         await States.waiting_for_sign_up_or_decline.set()
@@ -97,3 +134,4 @@ def register_handlers_create_appointment(dp: Dispatcher):
         state=States.waiting_for_date,
     )
     dp.register_message_handler(time_input, state=States.waiting_for_time)
+    dp.register_message_handler(confirm, state=States.waiting_for_confirm)

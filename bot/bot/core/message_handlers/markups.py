@@ -1,4 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types.reply_keyboard import ReplyKeyboardRemove
 
 
 BUTTON_START_NAMES = {
@@ -13,6 +14,7 @@ WORK_TYPES = {
     "Мужская стрижка с покраской": 30,
     "Женская окраска": 120,
 }
+CONFIRM_BUTTONS = {"yes": "✔️ Подтвердить", "no": "⛔ Отменить"}
 
 
 def generate_main_markup(full: bool = True) -> ReplyKeyboardMarkup:
@@ -82,5 +84,15 @@ def generate_orders_markup(orders: list) -> ReplyKeyboardMarkup:
 
     button_home = KeyboardButton(BUTTON_CHOICE_NAMES["home"])
     markup.add(button_home)
+
+    return markup
+
+
+def generate_confirm_markup() -> ReplyKeyboardMarkup:
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+
+    for button_name in CONFIRM_BUTTONS.values():
+        button = KeyboardButton(button_name)
+        markup.add(button)
 
     return markup
