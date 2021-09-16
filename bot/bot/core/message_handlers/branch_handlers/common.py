@@ -2,11 +2,15 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 
-from ...logic.utils import build_start_markup
+from ...logic.common import build_start_markup
 from ...logic.decorators import basic_message_handler_wrapper
-from ..markups import BUTTON_START_NAMES, generate_work_types_markup
+from ..markups import (
+    BUTTON_START_NAMES,
+    generate_work_types_markup,
+    generate_orders_markup,
+)
 from ...logic.orders import show_my_orders
-from .remove_appointment import orders_markup
+from ...logic.orders import get_orders_dict
 from ..states import States
 
 
@@ -43,7 +47,9 @@ async def action_chosen(message: types.Message, state: FSMContext):
         markup = await build_start_markup(message.from_user.id)
         await message.answer(message_text, reply_markup=markup)
     elif message.text == BUTTON_START_NAMES["decline"]:
-        markup = await orders_markup(message.from_user.id)
+        orders = await get_orders_dict(message.from_user.id)
+        await state.update_data(orders=orders)
+        markup = generate_orders_markup(orders.keys())
         await message.answer("Выберите нужную запись для отмены:", reply_markup=markup)
         await States.waiting_for_appointment_choise.set()
     else:

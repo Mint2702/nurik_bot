@@ -1,14 +1,13 @@
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters import Text, IDFilter
-from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import CallbackQuery, ReplyKeyboardRemove, callback_query
+from aiogram.types import CallbackQuery, ReplyKeyboardRemove
 from aiogram_calendar import simple_cal_callback, SimpleCalendar
 
 import uuid
 from datetime import datetime, timedelta
 
-from ...logic.utils import build_start_markup, get_available_times
+from ...logic.common import build_start_markup
+from ...logic.utils import get_available_times
 from ...logic.decorators import basic_message_handler_wrapper
 from ..markups import (
     WORK_TYPES,

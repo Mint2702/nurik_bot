@@ -87,11 +87,7 @@ async def get_user_orders(connection, user_id: int):
 
 
 @sql_task
-async def delete_order(connection, user_id: int, start_point: datetime):
-    row = await connection.fetch(
-        "DELETE FROM orders WHERE user_id = $1 AND start_point >= NOW() AND start_point = $2;",
-        user_id,
-        start_point,
-    )
+async def delete_order(connection, id: str):
+    row = await connection.fetch("DELETE FROM orders WHERE id = $1;", id)
 
     return row
