@@ -1,5 +1,4 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.types.reply_keyboard import ReplyKeyboardRemove
 
 
 BUTTON_START_NAMES = {
